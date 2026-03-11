@@ -4,6 +4,7 @@ import AppKit
 struct VoiceBarView: View {
     @EnvironmentObject var engine: TranscriptionEngine
     let onOpenVocabulary: () -> Void
+    let onOpenRecordings: () -> Void
 
     var body: some View {
         ZStack {
@@ -20,6 +21,14 @@ struct VoiceBarView: View {
 
                     statusContent
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button(action: onOpenRecordings) {
+                        Image(systemName: "list.bullet.rectangle")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("录音记录")
 
                     Button(action: onOpenVocabulary) {
                         Image(systemName: "character.book.closed")
@@ -63,7 +72,7 @@ struct VoiceBarView: View {
                         Image(systemName: "exclamationmark.shield")
                             .foregroundStyle(.orange)
                             .font(.system(size: 12))
-                        Text("需要辅助功能权限才能使用 ⌥⌘R 快捷键")
+                        Text("授权辅助功能可自动粘贴到光标位置")
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                         Button("去授权") {
@@ -81,7 +90,6 @@ struct VoiceBarView: View {
         }
         .frame(width: 500)
         .fixedSize(horizontal: true, vertical: true)
-        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -4)
     }
 
     @ViewBuilder
@@ -101,7 +109,7 @@ struct VoiceBarView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .font(.system(size: 12))
-                Text("已复制到剪贴板")
+                Text(engine.statusText)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             }

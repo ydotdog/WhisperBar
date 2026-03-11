@@ -10,6 +10,9 @@ packages:
   WhisperKit:
     url: https://github.com/argmaxinc/WhisperKit
     from: "0.9.0"
+  OnnxRuntime:
+    url: https://github.com/microsoft/onnxruntime-swift-package-manager
+    from: "1.20.0"
 
 targets:
   WhisperBar:
@@ -27,19 +30,27 @@ targets:
         CFBundleName: WhisperBar
         CFBundleDisplayName: WhisperBar
         CFBundleIdentifier: com.kyleqi.WhisperBar
-        CFBundleVersion: "1"
-        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "2"
+        CFBundleShortVersionString: "1.5"
         NSPrincipalClass: NSApplication
         NSMicrophoneUsageDescription: "WhisperBar 需要麦克风权限以录制语音"
         LSUIElement: true
+        LSApplicationCategoryType: "public.app-category.utilities"
     entitlements:
       path: WhisperBar/WhisperBar.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.device.audio-input: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kyleqi.WhisperBar
         SWIFT_VERSION: "5.9"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         PRODUCT_NAME: WhisperBar
+        DEVELOPMENT_TEAM: WC3PWB5R2J
+        CODE_SIGN_STYLE: Automatic
     dependencies:
       - package: WhisperKit
         product: WhisperKit
+      - package: OnnxRuntime
+        product: onnxruntime

@@ -9,6 +9,7 @@ struct WhisperBarApp: App {
             MenuBarView()
                 .environmentObject(appDelegate.engine)
                 .environmentObject(appDelegate.vocabulary)
+                .environmentObject(appDelegate.recordingStore)
         }
         .menuBarExtraStyle(.menu)
     }

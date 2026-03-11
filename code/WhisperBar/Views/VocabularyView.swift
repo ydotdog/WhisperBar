@@ -98,75 +98,84 @@ struct AddTermView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("正确词汇（如：OpenAI、李明）", text: $correct)
-                } header: {
-                    Text("词汇")
-                } footer: {
-                    Text("这是你希望出现在转写结果中的正确形式")
-                        .font(.caption)
-                }
+        VStack(alignment: .leading, spacing: 16) {
+            Text("添加词汇")
+                .font(.title2.bold())
 
-                Section {
-                    TextField("如：open ai, o p e n a i（用逗号分隔）", text: $aliasText)
-                } header: {
-                    Text("Whisper 可能识别成的错误写法（可选）")
-                } footer: {
-                    Text("填写后，App 会在转写完成后自动替换这些错误形式")
-                        .font(.caption)
-                }
-
-                Section {
-                    TextField("备注（可选）", text: $note)
-                } header: {
-                    Text("备注")
-                }
+            VStack(alignment: .leading, spacing: 4) {
+                Text("正确词汇")
+                    .font(.headline)
+                TextField("如：OpenAI、李明", text: $correct)
+                    .textFieldStyle(.roundedBorder)
+                Text("这是你希望出现在转写结果中的正确形式")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .navigationTitle("添加词汇")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("错误写法（可选）")
+                    .font(.headline)
+                TextField("如：open ai, o p e n a i（用逗号分隔）", text: $aliasText)
+                    .textFieldStyle(.roundedBorder)
+                Text("Whisper 可能输出的错误形式，转写后自动替换")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("备注（可选）")
+                    .font(.headline)
+                TextField("备注", text: $note)
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            Spacer()
+
+            HStack {
+                Spacer()
+                Button("取消") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("添加") {
+                    onAdd(correct, aliases, note)
+                    dismiss()
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("添加") {
-                        onAdd(correct, aliases, note)
-                        dismiss()
-                    }
-                    .disabled(correct.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(correct.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
-        .frame(width: 380, height: 380)
+        .padding(20)
+        .frame(width: 380, height: 340)
     }
 }
 
 // MARK: - MenuBar Menu
+
+extension Notification.Name {
+    static let openRecordings = Notification.Name("WhisperBar.openRecordings")
+    static let openVocabulary = Notification.Name("WhisperBar.openVocabulary")
+}
 
 struct MenuBarView: View {
     @EnvironmentObject var engine: TranscriptionEngine
     @EnvironmentObject var vocabulary: VocabularyStore
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(engine.statusText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        Text(engine.statusText)
 
-            Divider()
+        Divider()
 
-            Button("词汇管理…") {
-                if let delegate = NSApp.delegate as? AppDelegate {
-                    delegate.openVocabularyWindow()
-                }
-            }
+        Button("录音记录…") {
+            NotificationCenter.default.post(name: .openRecordings, object: nil)
+        }
 
-            Divider()
+        Button("词汇管理…") {
+            NotificationCenter.default.post(name: .openVocabulary, object: nil)
+        }
 
-            Button("退出 WhisperBar") {
-                NSApp.terminate(nil)
-            }
+        Divider()
+
+        Button("退出 WhisperBar") {
+            NSApp.terminate(nil)
         }
     }
 }

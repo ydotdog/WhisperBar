@@ -12,13 +12,23 @@ private class ClickThroughHostingView<T: View>: NSHostingView<T> {
 class AppDelegate: NSObject, NSApplicationDelegate {
     let engine = TranscriptionEngine()
     let vocabulary = VocabularyStore()
+    let recordingStore = RecordingStore()
     private var panel: NSPanel?
     private var vocabWindow: NSWindow?
+    private var recordingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         engine.vocabularyStore = vocabulary
+        engine.recordingStore = recordingStore
         createPanel()
         setupHotkey()
+
+        NotificationCenter.default.addObserver(
+            forName: .openRecordings, object: nil, queue: .main
+        ) { [weak self] _ in self?.openRecordingsWindow() }
+        NotificationCenter.default.addObserver(
+            forName: .openVocabulary, object: nil, queue: .main
+        ) { [weak self] _ in self?.openVocabularyWindow() }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -35,13 +45,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
 
-        let rootView = VoiceBarView(onOpenVocabulary: { [weak self] in
-            self?.openVocabularyWindow()
-        })
+        let rootView = VoiceBarView(
+            onOpenVocabulary: { [weak self] in self?.openVocabularyWindow() },
+            onOpenRecordings: { [weak self] in self?.openRecordingsWindow() }
+        )
         .environmentObject(engine)
 
         let hostingView = ClickThroughHostingView(rootView: rootView)
         hostingView.autoresizingMask = [.width, .height]
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = .clear
         panel.contentView = hostingView
 
         panel.level = .floating
@@ -49,7 +62,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         panel.becomesKeyOnlyIfNeeded = true
         panel.backgroundColor = .clear
         panel.isOpaque = false
-        panel.hasShadow = true
+        panel.hasShadow = false                // SwiftUI handles rounded shadow
+        panel.isMovableByWindowBackground = true // drag anywhere on the bar
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
 
         positionPanel(panel)
@@ -84,6 +98,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                        display: true)
     }
 
+    // MARK: - Recordings Window
+
+    func openRecordingsWindow() {
+        if let existing = recordingsWindow {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 500),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "录音记录"
+        window.contentView = NSHostingView(
+            rootView: RecordingsView()
+                .environmentObject(recordingStore)
+                .environmentObject(engine)
+        )
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        recordingsWindow = window
+    }
+
     // MARK: - Vocabulary Window
 
     func openVocabularyWindow() {
@@ -112,13 +153,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Global Hotkey
 
     private func setupHotkey() {
-        GlobalHotkeyManager.shared.onKeyDown = { [weak self] in
+        // Space bar long-press: push-to-talk
+        GlobalHotkeyManager.shared.onSpaceDown = { [weak self] in
             DispatchQueue.main.async { self?.engine.handleHotkeyDown() }
         }
-        GlobalHotkeyManager.shared.onKeyUp = { [weak self] in
+        GlobalHotkeyManager.shared.onSpaceUp = { [weak self] in
             DispatchQueue.main.async { self?.engine.handleHotkeyUp() }
         }
-        // Carbon RegisterEventHotKey does not require Accessibility permission
+        // ⌥⌘R: toggle recording
+        GlobalHotkeyManager.shared.onHotkeyPressed = { [weak self] in
+            DispatchQueue.main.async { self?.engine.handleToggleHotkey() }
+        }
         GlobalHotkeyManager.shared.register()
     }
 }

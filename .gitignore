@@ -16,3 +16,6 @@ Packages/
 
 # ML Models (too large for GitHub, download separately)
 WhisperBar/Models/
+code/WhisperBar/Models/
+*.mlmodelc/weights/weight.bin
+*.onnx
